@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from transformers import BertConfig, AdamW, get_linear_schedule_with_warmup
 
-from utils import MODEL_CLASSES, compute_metrics, get_intent_labels, get_slot_labels
+from utils import MODEL_CLASSES, compute_metrics, get_intent_labels, get_slot_labels, ResultsLogger
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,9 @@ class Trainer(object):
         # GPU or CPU
         self.device = "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu"
         self.model.to(self.device)
+
+        # Optional results logging
+        self.results_logger = ResultsLogger(args.results_logging) if args.results_logging else None
 
     def train(self):
         train_sampler = RandomSampler(self.train_dataset)
@@ -102,7 +105,10 @@ class Trainer(object):
                     global_step += 1
 
                     if self.args.logging_steps > 0 and global_step % self.args.logging_steps == 0:
-                        self.evaluate("dev")
+                        results = self.evaluate("dev")
+                        if self.results_logger:
+                            results.update(dict(global_step = global_step))
+                            self.results_logger.write_results(results)
 
                     if self.args.save_steps > 0 and global_step % self.args.save_steps == 0:
                         self.save_model()
@@ -114,6 +120,9 @@ class Trainer(object):
             if 0 < self.args.max_steps < global_step:
                 train_iterator.close()
                 break
+
+        if self.results_logger:
+            self.results_logger.close()
 
         return global_step, tr_loss / global_step
 

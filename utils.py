@@ -1,6 +1,7 @@
 import os
 import random
 import logging
+import csv
 
 import torch
 import numpy as np
@@ -103,5 +104,22 @@ def get_sentence_frame_acc(intent_preds, intent_labels, slot_preds, slot_labels)
 
     sementic_acc = np.multiply(intent_result, slot_result).mean()
     return {
-        "sementic_frame_acc": sementic_acc
+        "semantic_frame_acc": sementic_acc
     }
+
+
+class ResultsLogger:
+
+    def __init__(self, csv_filename):
+        self.csv_file = open(csv_filename, 'w')
+        self.writer = None
+
+    def write_results(self, results):
+        if not self.writer:
+            self.writer = csv.DictWriter(self.csv_file, fieldnames=results.keys())
+            self.writer.writeheader()
+        self.writer.writerow(results)
+        self.csv_file.flush()
+
+    def close(self):
+        self.csv_file.close()
