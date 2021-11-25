@@ -139,19 +139,16 @@ class BestModelRecords:
         metrics = [ metric.strip() for metric in metrics_list.split(',') ]
         self.record_values = { metric_name : None for metric_name in metrics }
 
+    def better_than_previous(self, metric_name, metric_value):
+        record_value = self.record_values[metric_name]
+        if record_value is None:
+            return True
+        return metric_value > record_value if METRICS_MAXIMIZE[metric_name] else metric_value < record_value
+
     def check(self, records):
         model_names_to_store = []
         for metric_name, metric_value in records.items():
-            if metric_name in self.record_values:
-                record_value = self.record_values[metric_name]
-                if record_value is None:
-                    model_names_to_store.append(metric_name)  # first record
-                else:
-                    if METRICS_MAXIMIZE[metric_name]:
-                        if metric_value > record_value:
-                            model_names_to_store.append(metric_name)
-                    else:
-                        if metric_value < record_value:
-                            model_names_to_store.append(metric_name)
+            if metric_name in self.record_values and self.better_than_previous(metric_name, metric_value):
+                model_names_to_store.append(metric_name)
                 self.record_values[metric_name] = metric_value
         return model_names_to_store
