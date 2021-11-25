@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 from tqdm import tqdm, trange
 
 import numpy as np
@@ -7,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from transformers import BertConfig, AdamW, get_linear_schedule_with_warmup
 
-from utils import MODEL_CLASSES, compute_metrics, get_intent_labels, get_slot_labels, ResultsLogger
+from utils import MODEL_CLASSES, compute_metrics, get_intent_labels, get_slot_labels, ResultsLogger, BestModelRecords
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,9 @@ class Trainer(object):
 
         # Optional results logging
         self.results_logger = ResultsLogger(args.results_logging) if args.results_logging else None
+
+        # Optional best
+        self.best_model_records = BestModelRecords(args.best_model_metrics) if args.best_model_metrics else None
 
     def train(self):
         train_sampler = RandomSampler(self.train_dataset)
@@ -109,6 +113,10 @@ class Trainer(object):
                         if self.results_logger:
                             results.update(dict(global_step = global_step))
                             self.results_logger.write_results(results)
+                        if self.best_model_records:
+                            logger.info("Checking best model records.")
+                            for metric_to_store in self.best_model_records.check(results):
+                                self.save_model(metric_to_store, results)
 
                     if self.args.save_steps > 0 and global_step % self.args.save_steps == 0:
                         self.save_model()
@@ -221,16 +229,25 @@ class Trainer(object):
 
         return results
 
-    def save_model(self):
+    def save_model(self, model_name_to_store=None, results=None):
+        if model_name_to_store:
+            model_path = os.path.join(self.args.model_dir, model_name_to_store)
+        else:
+            model_path = self.args.model_dir
+
         # Save model checkpoint (Overwrite)
-        if not os.path.exists(self.args.model_dir):
-            os.makedirs(self.args.model_dir)
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
         model_to_save = self.model.module if hasattr(self.model, 'module') else self.model
-        model_to_save.save_pretrained(self.args.model_dir)
+        model_to_save.save_pretrained(model_path)
 
         # Save training arguments together with the trained model
-        torch.save(self.args, os.path.join(self.args.model_dir, 'training_args.bin'))
-        logger.info("Saving model checkpoint to %s", self.args.model_dir)
+        torch.save(self.args, os.path.join(model_path, 'training_args.bin'))
+        logger.info("Saving model checkpoint to %s", model_path)
+
+        if results:
+            with open(os.path.join(model_path, 'results.json'), 'w') as f:
+                json.dump(results, f, indent=4)
 
     def load_model(self):
         # Check whether model exists

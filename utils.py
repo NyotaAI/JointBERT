@@ -24,6 +24,14 @@ MODEL_PATH_MAP = {
     'albert': 'albert-xxlarge-v1'
 }
 
+METRICS_MAXIMIZE = {
+    'slot_precision': True,
+    'slot_recall': True,
+    'slot_f1': True,
+    'intent_acc': True,
+    'semantic_frame_acc': True,
+    'loss': False
+}
 
 def get_intent_labels(args):
     return [label.strip() for label in open(os.path.join(args.data_dir, args.task, args.intent_label_file), 'r', encoding='utf-8')]
@@ -102,9 +110,9 @@ def get_sentence_frame_acc(intent_preds, intent_labels, slot_preds, slot_labels)
         slot_result.append(one_sent_result)
     slot_result = np.array(slot_result)
 
-    sementic_acc = np.multiply(intent_result, slot_result).mean()
+    semantic_acc = np.multiply(intent_result, slot_result).mean()
     return {
-        "semantic_frame_acc": sementic_acc
+        "semantic_frame_acc": semantic_acc
     }
 
 
@@ -123,3 +131,27 @@ class ResultsLogger:
 
     def close(self):
         self.csv_file.close()
+
+
+class BestModelRecords:
+
+    def __init__(self, metrics_list):
+        metrics = [ metric.strip() for metric in metrics_list.split(',') ]
+        self.record_values = { metric_name : None for metric_name in metrics }
+
+    def check(self, records):
+        model_names_to_store = []
+        for metric_name, metric_value in records.items():
+            if metric_name in self.record_values:
+                record_value = self.record_values[metric_name]
+                if record_value is None:
+                    model_names_to_store.append(metric_name)  # first record
+                else:
+                    if METRICS_MAXIMIZE[metric_name]:
+                        if metric_value > record_value:
+                            model_names_to_store.append(metric_name)
+                    else:
+                        if metric_value < record_value:
+                            model_names_to_store.append(metric_name)
+                self.record_values[metric_name] = metric_value
+        return model_names_to_store
