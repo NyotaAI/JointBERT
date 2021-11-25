@@ -62,6 +62,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--slot_loss_coef', type=float, default=1.0, help='Coefficient for the slot loss.')
 
+    parser.add_argument('--results_logging', type=str, help="Optional 'dev' metrics CSV file to store metrics to")
+
     # CRF option
     parser.add_argument("--use_crf", action="store_true", help="Whether to use CRF")
     parser.add_argument("--slot_pad_label", default="PAD", type=str, help="Pad token for slot label pad (to be ignore when calculate loss)")
