@@ -136,6 +136,8 @@ class Trainer(object):
 
         if self.results_logger:
             self.results_logger.close()
+        if self.train_results_logger:
+            self.train_results_logger.close()
 
         return global_step, tr_loss / global_step
 
