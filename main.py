@@ -63,6 +63,7 @@ if __name__ == '__main__':
     parser.add_argument('--slot_loss_coef', type=float, default=1.0, help='Coefficient for the slot loss.')
 
     parser.add_argument('--results_logging', type=str, help="Optional 'dev' metrics CSV file to store metrics to")
+    parser.add_argument('--train_results_logging', type=str, help="Optional 'train' metrics CSV file to store metrics to")
     parser.add_argument('--best_model_metrics', type=str,
                         help="Comma-separated list of result names (metrics) to optimize and save the model: " + ", ".join(METRICS_MAXIMIZE.keys()))
 
