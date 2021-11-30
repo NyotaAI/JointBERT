@@ -136,7 +136,7 @@ class ResultsLogger:
 class BestModelRecords:
 
     def __init__(self, metrics_list):
-        metrics = [ metric.strip() for metric in metrics_list.split(',') ]
+        metrics = [ metric.strip() for metric in metrics_list ]
         self.record_values = { metric_name : None for metric_name in metrics }
 
     def better_than_previous(self, metric_name, metric_value):

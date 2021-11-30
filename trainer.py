@@ -42,7 +42,7 @@ class Trainer(object):
         self.train_results_logger = ResultsLogger(args.train_results_logging) if args.train_results_logging else None
 
         # Optional best
-        self.best_model_records = BestModelRecords(args.best_model_metrics) if args.best_model_metrics else None
+        self.best_model_records = BestModelRecords(args.best_model_metric) if args.best_model_metric else None
 
     def train(self):
         train_sampler = RandomSampler(self.train_dataset)
