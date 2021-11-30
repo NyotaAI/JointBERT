@@ -63,8 +63,8 @@ if __name__ == '__main__':
     parser.add_argument('--slot_loss_coef', type=float, default=1.0, help='Coefficient for the slot loss.')
 
     parser.add_argument('--results_logging', type=str, help="Optional 'dev' metrics CSV file to store metrics to")
-    parser.add_argument('--best_model_metrics', type=str,
-                        help="Comma-separated list of result names (metrics) to optimize and save the model: " + ", ".join(METRICS_MAXIMIZE.keys()))
+    parser.add_argument('--best_model_metric', type=str, nargs='*',
+                        help="List of metrics to optimize for and save. Select values from: " + ", ".join(METRICS_MAXIMIZE.keys()))
 
     # CRF option
     parser.add_argument("--use_crf", action="store_true", help="Whether to use CRF")
