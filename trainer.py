@@ -38,7 +38,7 @@ class Trainer(object):
         self.model.to(self.device)
 
         # Optional results logging
-        self.results_logger = ResultsLogger(args.results_logging) if args.results_logging else None
+        self.dev_results_logger = ResultsLogger(args.dev_results_logging) if args.dev_results_logging else None
         self.train_results_logger = ResultsLogger(args.train_results_logging) if args.train_results_logging else None
 
         # Optional best
@@ -111,9 +111,9 @@ class Trainer(object):
 
                     if self.args.logging_steps > 0 and global_step % self.args.logging_steps == 0:
                         results = self.evaluate("dev")
-                        if self.results_logger:
+                        if self.dev_results_logger:
                             results.update(dict(global_step = global_step))
-                            self.results_logger.write_results(results)
+                            self.dev_results_logger.write_results(results)
                         if self.best_model_records:
                             logger.info("Checking best model records.")
                             for metric_to_store in self.best_model_records.check(results):
@@ -134,8 +134,8 @@ class Trainer(object):
                 train_iterator.close()
                 break
 
-        if self.results_logger:
-            self.results_logger.close()
+        if self.dev_results_logger:
+            self.dev_results_logger.close()
         if self.train_results_logger:
             self.train_results_logger.close()
 
