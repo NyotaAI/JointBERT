@@ -38,7 +38,8 @@ class Trainer(object):
         self.model.to(self.device)
 
         # Optional results logging
-        self.results_logger = ResultsLogger(args.results_logging) if args.results_logging else None
+        self.dev_results_logger = ResultsLogger(args.dev_results_logging) if args.dev_results_logging else None
+        self.train_results_logger = ResultsLogger(args.train_results_logging) if args.train_results_logging else None
 
         # Optional best
         self.best_model_records = BestModelRecords(args.best_model_metric) if args.best_model_metric else None
@@ -110,13 +111,17 @@ class Trainer(object):
 
                     if self.args.logging_steps > 0 and global_step % self.args.logging_steps == 0:
                         results = self.evaluate("dev")
-                        if self.results_logger:
+                        if self.dev_results_logger:
                             results.update(dict(global_step = global_step))
-                            self.results_logger.write_results(results)
+                            self.dev_results_logger.write_results(results)
                         if self.best_model_records:
                             logger.info("Checking best model records.")
                             for metric_to_store in self.best_model_records.check(results):
                                 self.save_model(metric_to_store, results)
+                        if self.train_results_logger:
+                            results = self.evaluate("train")
+                            results.update(dict(global_step = global_step))
+                            self.train_results_logger.write_results(results)
 
                     if self.args.save_steps > 0 and global_step % self.args.save_steps == 0:
                         self.save_model()
@@ -129,8 +134,10 @@ class Trainer(object):
                 train_iterator.close()
                 break
 
-        if self.results_logger:
-            self.results_logger.close()
+        if self.dev_results_logger:
+            self.dev_results_logger.close()
+        if self.train_results_logger:
+            self.train_results_logger.close()
 
         return global_step, tr_loss / global_step
 
@@ -139,8 +146,10 @@ class Trainer(object):
             dataset = self.test_dataset
         elif mode == 'dev':
             dataset = self.dev_dataset
+        elif mode == 'train':
+            dataset = self.train_dataset
         else:
-            raise Exception("Only dev and test dataset available")
+            raise Exception("Only dev, test and train datasets available")
 
         eval_sampler = SequentialSampler(dataset)
         eval_dataloader = DataLoader(dataset, sampler=eval_sampler, batch_size=self.args.eval_batch_size)
